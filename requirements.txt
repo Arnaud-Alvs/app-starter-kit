@@ -7,5 +7,5 @@ requests==2.31.0
 plotly==5.18.0
 python-dotenv==1.0.0
 scipy>=1.7.0
-folium
-streamlit-folium
+folium>=0.13.0
+streamlit-folium>=0.13.0

@@ -50,7 +50,7 @@ with col1:
     
     Find the nearest collection points for any type of waste in St. Gallen. Get directions and information on opening hours.
     """)
-    st.page_link("2_Find_Collection_Points.py", label="Find nearest points", icon="🚮")
+    st.page_link("pages/2_Find_Collection_Points.py", label="Find nearest points", icon="🚮")
 
 with col2:
     st.markdown("""
@@ -58,7 +58,7 @@ with col2:
     
     Not sure what type of waste you have? Our AI can help identify it and provide proper disposal instructions.
     """)
-    st.page_link("3_Identify_Waste.py", label="Identify your waste", icon="🔍")
+    st.page_link("pages/3_Identify_Waste.py", label="Identify your waste", icon="🔍")
 
 with col3:
     st.markdown("""
@@ -66,7 +66,7 @@ with col3:
     
     Learn more about our project, the technology behind it, and the team that made it possible.
     """)
-    st.page_link("4_About.py", label="About us", icon="ℹ️")
+    st.page_link("pages/4_About.py", label="About us", icon="ℹ️")
 
 # Environmental impact statistics
 st.markdown("## Environmental Impact")

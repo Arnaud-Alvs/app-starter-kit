@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from math import radians, sin, cos, sqrt, atan2
 import re # Import regex module
-import folium
+import folium 
 from streamlit_folium import st_folium
 
 # Configure logging for this module

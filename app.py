@@ -10,6 +10,7 @@ import os
 import sys
 import logging
 
+
 # Configure error handling and logging
 logging.basicConfig(level=logging.INFO, 
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

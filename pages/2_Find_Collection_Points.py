@@ -1,4 +1,27 @@
 import streamlit as st
+
+# Page configuration
+st.set_page_config(
+    page_title="WasteWise - Find Collection Points",
+    page_icon="🚮",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Hide the duplicated navigation section and top "app" entry
+hide_streamlit_style = """
+<style>
+[data-testid="stSidebarNavItems"] ul {
+    padding-top: 0rem;
+}
+[data-testid="stSidebarNavItems"] ul > li:first-child {
+    display: none;
+}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
 import pandas as pd
 import numpy as np
 import random
@@ -29,14 +52,6 @@ try:
 except ImportError as e:
     st.error(f"Failed to import required functions: {str(e)}")
     st.stop()
-
-# Page configuration
-st.set_page_config(
-    page_title="WasteWise - Find Collection Points",
-    page_icon="🚮",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state if not already done
 if 'waste_info_results' not in st.session_state:
@@ -180,26 +195,6 @@ if 'show_results' in st.session_state and st.session_state.show_results:
             st.session_state.show_results = False
             st.experimental_rerun()
 
-# Separator
-st.markdown("---")
-
-# --- General Information Section ---
-st.header("General Waste Information")
-
-# Tip of the day
-st.subheader("Tip of the Day")
-tips_of_the_day = [
-    "Recycling one aluminum can saves enough energy to run a TV for three hours.",
-    "Paper can be recycled up to 7 times before the fibers become too short.",
-    "Glass is 100% recyclable and can be recycled infinitely without losing its quality!",
-    "A mobile phone contains more than 70 different materials, many of which are recyclable.",
-    "Batteries contain toxic heavy metals, never throw them away with household waste.",
-    "Consider putting a 'No Junk Mail' sticker on your mailbox to reduce paper waste.",
-    "Composting can reduce the volume of your household waste by up to 30%.",
-    "Remember to break down cardboard packaging before disposing of it to save space.",
-    "LED bulbs are less harmful to the environment and last longer."
-]
-st.info(random.choice(tips_of_the_day))
 
 # Separator
 st.markdown("---")

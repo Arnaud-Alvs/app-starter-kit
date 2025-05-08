@@ -11,24 +11,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+hide_streamlit_style = """
+<style>
+[data-testid="stSidebarNavItems"] ul {
+    padding-top: 0rem;
+}
+[data-testid="stSidebarNavItems"] ul > li:first-child {
+    display: none;
+}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Main content
 st.title("♻️ WasteWise - Your smart recycling assistant")
-st.markdown("### Easily find where to dispose of your waste and contribute to a cleaner environment")
 
-# Hero image (if available)
-try:
-    # If you have an image file, uncomment and use this
-    # hero_image = Image.open("assets/recycling_hero.jpg")
-    # st.image(hero_image, use_column_width=True)
-    
-    # Alternatively, use a placeholder
-    st.image("https://via.placeholder.com/1200x400?text=WasteWise+-+Sustainable+Waste+Management", 
-             caption="Sustainable waste management for a cleaner environment")
-except Exception as e:
-    st.warning("Hero image could not be loaded.")
 
 # Feature showcases with icons and descriptions
-st.markdown("## 🧐 What can WasteWise do for you?")
+st.markdown("## What can WasteWise do for you?")
 
 col1, col2 = st.columns(2)
 
@@ -38,7 +38,7 @@ with col1:
     Simply tell us what waste you want to dispose of and your address in St. Gallen.
     We'll find the nearest collection points and upcoming collection dates for you.
     """)
-    st.page_link("2_Find_Collection_Points.py", label="Find Disposal Options", icon="🔍")
+    st.page_link("pages/2_Find_Collection_Points.py", label="Find Disposal Options", icon="🔍")
     
 with col2:
     st.markdown("### 🔍 Identify Your Waste")
@@ -46,21 +46,7 @@ with col2:
     Not sure what type of waste you have? Upload a photo or describe it,
     and our AI will help you identify it and provide proper disposal instructions.
     """)
-    st.page_link("3_Identify_Waste.py", label="Identify Your Waste", icon="📸")
-
-# Environmental impact statistics
-st.markdown("## Environmental Impact")
-
-impact_col1, impact_col2, impact_col3 = st.columns(3)
-
-with impact_col1:
-    st.metric(label="Waste Correctly Sorted", value="12,543 kg", delta="1,243 kg this month")
-
-with impact_col2:
-    st.metric(label="CO₂ Emissions Saved", value="2,432 kg", delta="347 kg this month")
-
-with impact_col3:
-    st.metric(label="Active Users", value="853", delta="57 new")
+    st.page_link("pages/3_Identify_Waste.py", label="Identify Your Waste", icon="📸")
 
 # Tips of the day
 st.markdown("---")
@@ -78,6 +64,21 @@ tips_of_the_day = [
 ]
 st.info(random.choice(tips_of_the_day))
 
+# Environmental impact statistics
+st.markdown("## Environmental Impact")
+
+impact_col1, impact_col2, impact_col3 = st.columns(3)
+
+with impact_col1:
+    st.metric(label="Waste Correctly Sorted", value="12,543 kg", delta="1,243 kg this month")
+
+with impact_col2:
+    st.metric(label="CO₂ Emissions Saved", value="2,432 kg", delta="347 kg this month")
+
+with impact_col3:
+    st.metric(label="Active Users", value="853", delta="57 new")
+
+
 # Set up sidebar
 with st.sidebar:
     st.title("WasteWise")
@@ -85,10 +86,10 @@ with st.sidebar:
     
     # Navigation
     st.markdown("## Navigation")
-    st.page_link("1_Home.py", label="Home", icon="🏠")
-    st.page_link("2_Find_Collection_Points.py", label="Find Collection Points", icon="🚮")
-    st.page_link("3_Identify_Waste.py", label="Identify Waste", icon="🔍")
-    st.page_link("4_About.py", label="About", icon="ℹ️")
+    st.page_link("pages/1_Home.py", label="Home", icon="🏠")
+    st.page_link("pages/2_Find_Collection_Points.py", label="Find Collection Points", icon="🚮")
+    st.page_link("pages/3_Identify_Waste.py", label="Identify Waste", icon="🔍")
+    st.page_link("pages/4_About.py", label="About", icon="ℹ️")
     
     # Useful links
     st.markdown("## Useful Links")

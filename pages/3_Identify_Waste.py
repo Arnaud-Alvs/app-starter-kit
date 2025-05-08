@@ -1,4 +1,26 @@
 import streamlit as st
+
+# Page configuration must be the FIRST Streamlit command
+st.set_page_config(
+    page_title="WasteWise - Identify Waste",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Hide the duplicated navigation section and top "app" entry
+hide_streamlit_style = """
+<style>
+[data-testid="stSidebarNavItems"] ul {
+    padding-top: 0rem;
+}
+[data-testid="stSidebarNavItems"] ul > li:first-child {
+    display: none;
+}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 import pandas as pd
 import numpy as np
 from PIL import Image
@@ -28,13 +50,6 @@ except ImportError as e:
     st.error(f"Failed to import required functions: {str(e)}")
     st.stop()
 
-# Page configuration
-st.set_page_config(
-    page_title="WasteWise - Identify Waste",
-    page_icon="🔍",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state for waste identification
 if 'identified_waste_type' not in st.session_state:

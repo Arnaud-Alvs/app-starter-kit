@@ -334,6 +334,19 @@ if __name__ == "__main__":
         layout="wide",
         initial_sidebar_state="expanded"
     )
+
+       # Hide the "app" sidebar item by injecting custom CSS
+    hide_streamlit_style = """
+    <style>
+    [data-testid="stSidebarNavItems"] ul {
+        padding-top: 0rem;
+    }
+    [data-testid="stSidebarNavItems"] ul > li:first-child {
+        display: none;
+    }
+    </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
     # Create a simple loading page
     st.write("# Loading WasteWise...")

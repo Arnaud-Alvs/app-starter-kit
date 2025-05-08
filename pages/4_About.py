@@ -1,4 +1,25 @@
 import streamlit as st
+
+st.set_page_config(
+    page_title="WasteWise - About",
+    page_icon="ℹ️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Hide the duplicated navigation section and top "app" entry
+hide_streamlit_style = """
+<style>
+[data-testid="stSidebarNavItems"] ul {
+    padding-top: 0rem;
+}
+[data-testid="stSidebarNavItems"] ul > li:first-child {
+    display: none;
+}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 import pandas as pd
 import requests
 import sys
@@ -17,14 +38,6 @@ try:
 except ImportError as e:
     st.error(f"Failed to import required functions: {str(e)}")
     
-# Page configuration
-st.set_page_config(
-    page_title="WasteWise - About",
-    page_icon="ℹ️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
 # Page header
 st.title("ℹ️ About WasteWise")
 

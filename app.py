@@ -324,8 +324,6 @@ import streamlit.web.bootstrap
 from streamlit.web.server.server import Server
 import os
 
-# This is the main entry point for the application
-# When run directly from the command line, this code will execute
 if __name__ == "__main__":
     # Set page config for the main app (needed even though we redirect)
     st.set_page_config(
@@ -335,14 +333,27 @@ if __name__ == "__main__":
         initial_sidebar_state="expanded"
     )
 
-       # Hide the "app" sidebar item by injecting custom CSS
+    # Hide ALL built-in Streamlit navigation elements - PUT THE CSS HERE
     hide_streamlit_style = """
     <style>
-    [data-testid="stSidebarNavItems"] ul {
-        padding-top: 0rem;
+    /* Hide the default sidebar navigation */
+    [data-testid="stSidebarNavItems"] {
+        display: none !important;
     }
-    [data-testid="stSidebarNavItems"] ul > li:first-child {
-        display: none;
+
+    /* Hide the expand/collapse arrow */
+    button[kind="header"] {
+        display: none !important;
+    }
+
+    /* Remove the extra padding at the top of sidebar */
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1rem !important;
+    }
+
+    /* Optional: Hide app name from sidebar header if present */
+    .sidebar-content .sidebar-collapse-control {
+        display: none !important;
     }
     </style>
     """
@@ -353,4 +364,4 @@ if __name__ == "__main__":
     st.write("Please wait while we load the application...")
     
     # Redirect to the Home page
-    st.switch_page("pages/1_Home.py")
+    st.switch_page("1_Home.py")

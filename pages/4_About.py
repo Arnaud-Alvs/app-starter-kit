@@ -7,14 +7,27 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Hide the duplicated navigation section and top "app" entry
+# Hide ALL built-in Streamlit navigation elements
 hide_streamlit_style = """
 <style>
-[data-testid="stSidebarNavItems"] ul {
-    padding-top: 0rem;
+/* Hide the default sidebar navigation */
+[data-testid="stSidebarNavItems"] {
+    display: none !important;
 }
-[data-testid="stSidebarNavItems"] ul > li:first-child {
-    display: none;
+
+/* Hide the expand/collapse arrow */
+button[kind="header"] {
+    display: none !important;
+}
+
+/* Remove the extra padding at the top of sidebar */
+section[data-testid="stSidebar"] > div {
+    padding-top: 1rem !important;
+}
+
+/* Optional: Hide app name from sidebar header if present */
+.sidebar-content .sidebar-collapse-control {
+    display: none !important;
 }
 </style>
 """
@@ -244,10 +257,10 @@ with st.sidebar:
     
     # Navigation
     st.markdown("## Navigation")
-    st.page_link("pages/1_Home.py", label="Home", icon="🏠")
-    st.page_link("pages/2_Find_Collection_Points.py", label="Find Collection Points", icon="🚮")
-    st.page_link("pages/3_Identify_Waste.py", label="Identify Waste", icon="🔍")
-    st.page_link("pages/4_About.py", label="About", icon="ℹ️")
+    st.page_link("1_Home.py", label="Home", icon="🏠")
+    st.page_link("2_Find_Collection_Points.py", label="Find Collection Points", icon="🚮")
+    st.page_link("3_Identify_Waste.py", label="Identify Waste", icon="🔍")
+    st.page_link("4_About.py", label="About", icon="ℹ️")
     
     # Useful links
     st.markdown("## Useful Links")

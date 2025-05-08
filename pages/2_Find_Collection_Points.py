@@ -4,8 +4,8 @@ import numpy as np
 import random
 import sys
 import os
+import folium 
 from streamlit_folium import st_folium
-import folium
 
 # Add the parent directory to the path to access app.py functions
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

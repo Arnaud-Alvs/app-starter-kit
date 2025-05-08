@@ -10,7 +10,6 @@ import os
 import sys
 import logging
 
-
 # Configure error handling and logging
 logging.basicConfig(level=logging.INFO, 
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -43,14 +42,6 @@ except Exception as e:
     st.error(f"An unexpected error occurred while importing location_api.py: {str(e)}")
     logger.error(f"Unexpected error: {str(e)}")
     st.stop() # Stop execution on other import errors
-
-# Page configuration
-st.set_page_config(
-    page_title="WasteWise - Your smart recycling assistant",
-    page_icon="♻️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state if not already done
 if 'waste_info_results' not in st.session_state:
@@ -319,48 +310,34 @@ IMAGE_CLASS_NAMES = [
     "Hazardous waste ⚠"
 ]
 
-# Home page content
-st.title("WasteWise - Your smart recycling assistant")
-st.markdown("### Easily find where to dispose of your waste and contribute to a cleaner environment")
+# Try importing folium and streamlit_folium upfront
+try:
+    import folium
+    from streamlit_folium import st_folium
+    logger.info("Successfully imported folium and streamlit_folium")
+except ImportError as e:
+    logger.warning(f"Failed to import map libraries: {str(e)}")
+    logger.warning("Maps functionality might be limited")
 
-# Feature showcases with icons and descriptions
-st.markdown("## 🧐 What can WasteWise do for you?")
+# Redirect to the Home page
+import streamlit.web.bootstrap
+from streamlit.web.server.server import Server
+import os
 
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("### 🚮 Find Collection Points")
-    st.markdown("""
-    Simply tell us what waste you want to dispose of and your address in St. Gallen.
-    We'll find the nearest collection points and upcoming collection dates for you.
-    """)
-    st.page_link("pages/2_Find_Collection_Points.py", label="Find Disposal Options", icon="🔍")
+# This is the main entry point for the application
+# When run directly from the command line, this code will execute
+if __name__ == "__main__":
+    # Set page config for the main app (needed even though we redirect)
+    st.set_page_config(
+        page_title="WasteWise - Your smart recycling assistant",
+        page_icon="♻️",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
     
-with col2:
-    st.markdown("### 🔍 Identify Your Waste")
-    st.markdown("""
-    Not sure what type of waste you have? Upload a photo or describe it,
-    and our AI will help you identify it and provide proper disposal instructions.
-    """)
-    st.page_link("pages/3_Identify_Waste.py", label="Identify Your Waste", icon="📸")
-
-# Tips of the day
-st.markdown("---")
-st.subheader("💡 Tip of the Day")
-tips_of_the_day = [
-    "Recycling one aluminum can saves enough energy to run a TV for three hours.",
-    "Paper can be recycled up to 7 times before the fibers become too short.",
-    "Glass is 100% recyclable and can be recycled infinitely without losing its quality!",
-    "A mobile phone contains more than 70 different materials, many of which are recyclable.",
-    "Batteries contain toxic heavy metals, never throw them away with household waste.",
-    "Consider putting a 'No Junk Mail' sticker on your mailbox to reduce paper waste.",
-    "Composting can reduce the volume of your household waste by up to 30%.",
-    "Remember to break down cardboard packaging before disposing of it to save space.",
-    "LED bulbs are less harmful to the environment and last longer."
-]
-import random
-st.info(random.choice(tips_of_the_day))
-
-# Footer
-st.markdown("---")
-st.markdown("© 2025 WasteWise - University Project | [Contact](mailto:contact@wastewise.example.com) | [Legal notice](https://example.com)")
+    # Create a simple loading page
+    st.write("# Loading WasteWise...")
+    st.write("Please wait while we load the application...")
+    
+    # Redirect to the Home page
+    st.switch_page("pages/1_Home.py")

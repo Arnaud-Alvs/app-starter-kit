@@ -3,7 +3,7 @@ import random
 from PIL import Image
 import os
 
-# Page configuration - this is needed on each page
+# Page configuration must be the FIRST Streamlit command
 st.set_page_config(
     page_title="WasteWise - Home",
     page_icon="♻️",
@@ -12,8 +12,8 @@ st.set_page_config(
 )
 
 # Main content
-st.title("♻️ Welcome to WasteWise")
-st.markdown("### Your smart recycling assistant in St. Gallen")
+st.title("♻️ WasteWise - Your smart recycling assistant")
+st.markdown("### Easily find where to dispose of your waste and contribute to a cleaner environment")
 
 # Hero image (if available)
 try:
@@ -27,46 +27,26 @@ try:
 except Exception as e:
     st.warning("Hero image could not be loaded.")
 
-# Mission statement
-st.markdown("""
-## Our Mission
+# Feature showcases with icons and descriptions
+st.markdown("## 🧐 What can WasteWise do for you?")
 
-WasteWise aims to simplify waste disposal and recycling in St. Gallen by providing:
-
-- **Easy waste identification** using AI technology
-- **Location-based collection information** for all types of waste
-- **Collection schedules** to never miss a pickup
-- **Environmental education** to promote sustainable practices
-""")
-
-# Featured modules with cards
-st.markdown("## Features")
-
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
+    st.markdown("### 🚮 Find Collection Points")
     st.markdown("""
-    ### 🚮 Find Collection Points
-    
-    Find the nearest collection points for any type of waste in St. Gallen. Get directions and information on opening hours.
+    Simply tell us what waste you want to dispose of and your address in St. Gallen.
+    We'll find the nearest collection points and upcoming collection dates for you.
     """)
-    st.page_link("pages/2_Find_Collection_Points.py", label="Find nearest points", icon="🚮")
-
+    st.page_link("2_Find_Collection_Points.py", label="Find Disposal Options", icon="🔍")
+    
 with col2:
+    st.markdown("### 🔍 Identify Your Waste")
     st.markdown("""
-    ### 🔍 Identify Waste
-    
-    Not sure what type of waste you have? Our AI can help identify it and provide proper disposal instructions.
+    Not sure what type of waste you have? Upload a photo or describe it,
+    and our AI will help you identify it and provide proper disposal instructions.
     """)
-    st.page_link("pages/3_Identify_Waste.py", label="Identify your waste", icon="🔍")
-
-with col3:
-    st.markdown("""
-    ### ℹ️ About WasteWise
-    
-    Learn more about our project, the technology behind it, and the team that made it possible.
-    """)
-    st.page_link("pages/4_About.py", label="About us", icon="ℹ️")
+    st.page_link("3_Identify_Waste.py", label="Identify Your Waste", icon="📸")
 
 # Environmental impact statistics
 st.markdown("## Environmental Impact")
@@ -81,30 +61,6 @@ with impact_col2:
 
 with impact_col3:
     st.metric(label="Active Users", value="853", delta="57 new")
-
-# Recent news or updates
-st.markdown("## Latest Updates")
-
-# Create cards for news
-news_container = st.container()
-with news_container:
-    news_col1, news_col2 = st.columns(2)
-    
-    with news_col1:
-        st.markdown("### 🆕 New Collection Points Added")
-        st.markdown("""
-        We've added 15 new collection points for electronic waste throughout the city.
-        Check the map for locations near you!
-        """)
-        st.date_input("Posted on", value=st.session_state.get("today", None), disabled=True, label_visibility="collapsed")
-    
-    with news_col2:
-        st.markdown("### 📊 Recycling Statistics Released")
-        st.markdown("""
-        St. Gallen has achieved a 67% recycling rate in 2024, up from 62% last year.
-        Learn how you can help reach the 75% target by 2027.
-        """)
-        st.date_input("Posted on", value=st.session_state.get("today", None), disabled=True, label_visibility="collapsed")
 
 # Tips of the day
 st.markdown("---")

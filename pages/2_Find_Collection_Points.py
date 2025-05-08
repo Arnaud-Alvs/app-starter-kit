@@ -217,10 +217,10 @@ with st.sidebar:
     
     # Navigation
     st.markdown("## Navigation")
-    st.page_link("1_🌎_Home.py", label="Home", icon="🏠")
-    st.page_link("2_🚮_Find_Collection_Point.py", label="Find Collection Points", icon="🚮")
-    st.page_link("3_🔍_Identify_Waste.py", label="Identify Waste", icon="🔍")
-    st.page_link("4_ℹ️_About.py", label="About", icon="ℹ️")
+    st.page_link("1_Home.py", label="Home", icon="🏠")
+    st.page_link("2_Find_Collection_Points.py", label="Find Collection Points", icon="🚮")
+    st.page_link("3_Identify_Waste.py", label="Identify Waste", icon="🔍")
+    st.page_link("4_ℹAbout.py", label="About", icon="ℹ️")
     
     # Useful links
     st.markdown("## Useful Links")

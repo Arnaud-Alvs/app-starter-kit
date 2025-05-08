@@ -289,7 +289,7 @@ if st.session_state.identified_waste_type:
                     st.session_state.user_address = user_address
                     
                     # Redirect to collection points page with the results
-                    st.page_link("2_🚮_Find_Collection_Point.py", label="View Collection Points", icon="🚮")
+                    st.page_link("2_Find_Collection_Points.py", label="View Collection Points", icon="🚮")
                     st.write("Your waste type has been identified. Click above to view collection points.")
                     st.session_state.show_results = True
 
@@ -309,10 +309,10 @@ with st.sidebar:
     
     # Navigation
     st.markdown("## Navigation")
-    st.page_link("1_🌎_Home.py", label="Home", icon="🏠")
-    st.page_link("2_🚮_Find_Collection_Point.py", label="Find Collection Points", icon="🚮")
-    st.page_link("3_🔍_Identify_Waste.py", label="Identify Waste", icon="🔍")
-    st.page_link("4_ℹ️_About.py", label="About", icon="ℹ️")
+    st.page_link("1_Home.py", label="Home", icon="🏠")
+    st.page_link("2_Find_Collection_Points.py", label="Find Collection Points", icon="🚮")
+    st.page_link("3_Identify_Waste.py", label="Identify Waste", icon="🔍")
+    st.page_link("4_About.py", label="About", icon="ℹ️")
     
     # Useful links
     st.markdown("## Useful Links")

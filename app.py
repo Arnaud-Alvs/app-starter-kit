@@ -1,367 +1,188 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-from PIL import Image
-import requests
-import json
-import pickle
-from datetime import datetime
-import os
-import sys
-import logging
+import plotly.express as px
+import plotly.graph_objects as go
+from data import charger_donnees, STATUTS, couleur_statut
 
-# Configure error handling and logging
-logging.basicConfig(level=logging.INFO, 
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+st.set_page_config(
+    page_title="Flotte Ascenseurs",
+    page_icon="🛗",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-# Import functions from location_api.py
-try:
-    from location_api import (
-        get_coordinates,
-        find_collection_points,
-        fetch_collection_dates,
-        get_next_collection_date,
-        format_collection_points,
-        get_available_waste_types,
-        translate_waste_type,
-        fetch_collection_points,
-        COLLECTION_POINTS_ENDPOINT,
-        COLLECTION_DATES_ENDPOINT,
-        handle_waste_disposal,
-        create_interactive_map
+st.markdown("""
+<style>
+.kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    border-left: 5px solid;
+    margin-bottom: 8px;
+}
+.kpi-value { font-size: 2.2rem; font-weight: 700; margin: 0; }
+.kpi-label { font-size: 0.85rem; color: #6B7280; margin: 0; }
+.alert-box {
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+@st.cache_data
+def get_data():
+    return charger_donnees()
+
+
+df = get_data()
+
+# ── Sidebar ──────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.title("🛗 Flotte Ascenseurs")
+    st.divider()
+
+    statut_filtre = st.multiselect(
+        "Statut",
+        options=list(STATUTS.keys()),
+        default=list(STATUTS.keys()),
     )
-    logger.info(f"Successfully imported location_api functions")
-    logger.info(f"Collection Points API: {COLLECTION_POINTS_ENDPOINT}")
-    logger.info(f"Collection Dates API: {COLLECTION_DATES_ENDPOINT}")
-except ImportError as e:
-    st.error(f"Failed to import from location_api.py: {str(e)}")
-    logger.error(f"Import error: {str(e)}")
-    st.stop() # Stop execution if the core dependency is missing
-except Exception as e:
-    st.error(f"An unexpected error occurred while importing location_api.py: {str(e)}")
-    logger.error(f"Unexpected error: {str(e)}")
-    st.stop() # Stop execution on other import errors
-
-# Initialize session state if not already done
-if 'waste_info_results' not in st.session_state:
-    st.session_state.waste_info_results = None
-    st.session_state.show_results = False
-
-# Function to check if ML models are available (moved to app.py to be accessible by all pages)
-def check_ml_models_available():
-    """Check if ML model files exist"""
-    required_files = ['waste_classifier.pkl', 'waste_vectorizer.pkl', 'waste_encoder.pkl']
-    
-    for file in required_files:
-        if not os.path.exists(file):
-            return False
-    return True
-
-# Function to check if TensorFlow is available
-def check_tensorflow_available():
-    """Check if TensorFlow is available"""
-    try:
-        import tensorflow
-        return True
-    except ImportError:
-        return False
-
-# Function to load the text model - fixed version
-@st.cache_resource
-def load_text_model():
-    """Load text classification model with proper error handling"""
-    try:
-        if not check_ml_models_available():
-            logger.warning("ML model files not found")
-            return None, None, None
-            
-        with open('waste_classifier.pkl', 'rb') as f:
-            model = pickle.load(f)
-        with open('waste_vectorizer.pkl', 'rb') as f:
-            vectorizer = pickle.load(f)
-        with open('waste_encoder.pkl', 'rb') as f:
-            encoder = pickle.load(f)
-        return model, vectorizer, encoder
-    except Exception as e:
-        logger.error(f"Error loading text model: {str(e)}")
-        return None, None, None
-
-# Function to load the image model
-@st.cache_resource
-def load_image_model():
-    """Load image classification model with proper error handling"""
-    try:
-        if not check_tensorflow_available():
-            logger.warning("TensorFlow not available")
-            return None
-            
-        if not os.path.exists("waste_image_classifier.h5"):
-            logger.warning("Image model file not found")
-            return None
-            
-        from tensorflow.keras.models import load_model
-        return load_model("waste_image_classifier.h5")
-    except Exception as e:
-        logger.error(f"Error loading image model: {str(e)}")
-        return None
-
-# Rules-based fallback prediction when ML models aren't available
-def rule_based_prediction(description):
-    """Rule-based prediction for when ML models aren't available"""
-    description = description.lower()
-    
-    # Keywords for each category
-    keywords = {
-        "Household waste 🗑": ["trash", "garbage", "waste", "dirty", "leftover", "broken", "ordinary"],
-        "Paper 📄": ["paper", "newspaper", "magazine", "book", "printer", "envelope", "document"],
-        "Cardboard 📦": ["cardboard", "carton", "box", "packaging", "thick paper"],
-        "Glass 🍾": ["glass", "bottle", "jar", "container", "mirror", "window"],
-        "Green waste 🌿": ["green", "grass", "leaf", "leaves", "plant", "garden", "flower", "vegetable", "fruit"],
-        "Cans 🥫": ["can", "tin", "aluminum can", "soda", "drink can", "food can"],
-        "Aluminium 🧴": ["aluminum", "foil", "tray", "container", "lid", "wrap", "packaging"],
-        "Metal 🪙": ["metal", "iron", "steel", "scrap", "nails", "screws", "wire"],
-        "Textiles 👕": ["textile", "clothes", "fabric", "shirt", "pants", "cloth", "cotton", "wool"],
-        "Oil 🛢": ["oil", "cooking oil", "motor oil", "lubricant", "grease"],
-        "Hazardous waste ⚠": ["battery", "chemical", "toxic", "medicine", "paint", "solvent", "cleaner"],
-        "Foam packaging ☁": ["foam", "styrofoam", "polystyrene", "packing", "cushion", "insulation"]
-    }
-    
-    # Score each category
-    scores = {}
-    for category, word_list in keywords.items():
-        scores[category] = 0
-        for word in word_list:
-            if word in description:
-                scores[category] += 1
-    
-    # Find best category
-    if any(scores.values()):
-        best_category = max(scores, key=scores.get)
-        confidence = min(0.7, scores[best_category] / len(keywords[best_category]))
-        return best_category, confidence
-    else:
-        return "Household waste 🗑", 0.3  # Default category
-
-# Simple image-based prediction as fallback
-def simple_image_prediction(image):
-    """Simple color-based prediction as fallback for image classification"""
-    try:
-        # Convert to numpy array
-        img_array = np.array(image)
-        
-        # Analyze average color
-        avg_color = np.mean(img_array, axis=(0, 1))
-        
-        # Simple logic based on dominant color
-        r, g, b = avg_color[:3]
-        
-        if g > r and g > b:  # Green dominant
-            return "Green waste 🌿", 0.5
-        elif b > r and b > g:  # Blue dominant
-            return "Paper 📄", 0.4
-        elif r > g and r > b:  # Red/Brown dominant
-            return "Cardboard 📦", 0.4
-        elif r > 200 and g > 200 and b > 200:  # Very light
-            return "Foam packaging ☁", 0.4
-        elif r < 50 and g < 50 and b < 50:  # Very dark
-            return "Metal 🪙", 0.4
-        else:
-            return "Household waste 🗑", 0.3
-    except Exception as e:
-        logger.error(f"Error in color-based prediction: {str(e)}")
-        return "Household waste 🗑", 0.3
-
-# Enhanced predict_from_text function with fallback
-def predict_from_text(description, model=None, vectorizer=None, encoder=None):
-    """Predict waste type from text with fallback to rule-based"""
-    if not description:
-        return None, 0.0
-    
-    # Use ML model if available
-    if model is not None and vectorizer is not None and encoder is not None:
-        try:
-            description = description.lower()
-            X_new = vectorizer.transform([description])
-            prediction = model.predict(X_new)[0]
-            probabilities = model.predict_proba(X_new)[0]
-            confidence = probabilities[prediction]
-            
-            # Get category from encoder and ensure it's in the right format
-            category = encoder.inverse_transform([prediction])[0]
-
-        # Map category to UI format with emojis if needed
-            category_mapping = {
-                "Household": "Household waste 🗑",
-                "Paper": "Paper 📄",
-                "Cardboard": "Cardboard 📦",
-                "Glass": "Glass 🍾",
-                 "Green": "Green waste 🌿",
-                "Cans": "Cans 🥫",
-                "Aluminium": "Aluminium 🧴",
-                "Metal": "Metal 🪙",
-                "Textiles": "Textiles 👕",
-                "Oil": "Oil 🛢",
-                "Hazardous": "Hazardous waste ⚠",
-                "Foam packaging": "Foam packaging ☁"
-            }
-
-            ui_category = category_mapping.get(category, category)
-
-            if confidence < 0.3:
-                return "Unknown 🚫", float(confidence)
-
-            return ui_category, float(confidence)
-
-        except Exception as e:
-            logger.error(f"Error in ML text prediction: {str(e)}")
-            # Fall back to rule-based
-            return rule_based_prediction(description)
-    else:
-        # Fall back to rule-based prediction
-        logger.info("ML model not available, using rule-based prediction")
-        return rule_based_prediction(description)
-
-# Enhanced predict_from_image function with fallback
-def predict_from_image(img, model=None, class_names=None):
-    """Predict waste type from image with fallback to color-based"""
-    if model is None or class_names is None:
-        # Fallback to color-based prediction
-        logger.info("Image model not available, using color-based prediction")
-        return simple_image_prediction(img)
-        
-    try:
-        # Ensure TensorFlow is imported
-        import tensorflow as tf
-        from tensorflow.keras.preprocessing import image as keras_image
-        
-        # Preprocess image
-        img = img.resize((224, 224))
-        img_array = keras_image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array / 255.0
-        
-        # Make prediction
-        predictions = model.predict(img_array)
-        class_idx = np.argmax(predictions[0])
-        confidence = float(np.max(predictions[0]))
-        
-        # Get class name
-        if class_idx < len(class_names):
-            category = class_names[class_idx]
-            return category, confidence
-        else:
-            logger.error(f"Invalid class index: {class_idx}, max expected: {len(class_names)-1}")
-            return simple_image_prediction(img)
-            
-    except Exception as e:
-        logger.error(f"Error in image prediction: {str(e)}")
-        return simple_image_prediction(img)
-
-# Function to convert waste type selected in UI to API format
-def convert_waste_type_to_api(ui_waste_type):
-    mapping = {
-        "Household waste 🗑": "Kehricht",
-        "Paper 📄": "Papier",
-        "Cardboard 📦": "Karton",
-        "Glass 🍾": "Glas",
-        "Green waste 🌿": "Grüngut",
-        "Cans 🥫": "Dosen",
-        "Aluminium 🧴": "Aluminium",
-        "Metal 🪙": "Altmetall",
-        "Textiles 👕": "Alttextilien",
-        "Oil 🛢": "Altöl",
-        "Hazardous waste ⚠": "Sonderabfall",
-        "Foam packaging ☁": "Styropor"
-    }
-    return mapping.get(ui_waste_type, ui_waste_type)
-
-# Convert API waste type to UI format (with emojis)
-def convert_api_to_ui_waste_type(api_waste_type):
-    mapping = {
-        "Kehricht": "Household waste 🗑",
-        "Papier": "Paper 📄",
-        "Karton": "Cardboard 📦",
-        "Glas": "Glass 🍾",
-        "Grüngut": "Green waste 🌿",
-        "Dosen": "Cans 🥫",
-        "Aluminium": "Aluminium 🧴",
-        "Altmetall": "Metal 🪙",
-        "Alttextilien": "Textiles 👕",
-        "Altöl": "Oil 🛢",
-        "Sonderabfall": "Hazardous waste ⚠",
-        "Styropor": "Foam packaging ☁"
-    }
-    return mapping.get(api_waste_type, api_waste_type)
-
-# Define image class names (needed across pages)
-IMAGE_CLASS_NAMES = [
-    "Household waste 🗑", 
-    "Paper 📄", 
-    "Cardboard 📦", 
-    "Glass 🍾", 
-    "Green waste 🌿", 
-    "Cans 🥫", 
-    "Aluminium 🧴", 
-    "Foam packaging ☁", 
-    "Metal 🪙", 
-    "Textiles 👕", 
-    "Oil 🛢", 
-    "Hazardous waste ⚠"
-]
-
-# Try importing folium and streamlit_folium upfront
-try:
-    import folium
-    from streamlit_folium import st_folium
-    logger.info("Successfully imported folium and streamlit_folium")
-except ImportError as e:
-    logger.warning(f"Failed to import map libraries: {str(e)}")
-    logger.warning("Maps functionality might be limited")
-
-# Redirect to the Home page
-import streamlit.web.bootstrap
-from streamlit.web.server.server import Server
-import os
-
-if __name__ == "__main__":
-    # Set page config for the main app (needed even though we redirect)
-    st.set_page_config(
-        page_title="WasteWise - Your smart recycling assistant",
-        page_icon="♻️",
-        layout="wide",
-        initial_sidebar_state="expanded"
+    marque_filtre = st.multiselect(
+        "Marque",
+        options=sorted(df["Marque"].unique()),
+        default=[],
     )
+    batiment_filtre = st.multiselect(
+        "Bâtiment",
+        options=sorted(df["Bâtiment"].unique()),
+        default=[],
+    )
+    st.divider()
+    st.caption("Données simulées — mise à jour automatique")
 
-    # Hide ALL built-in Streamlit navigation elements - PUT THE CSS HERE
-    hide_streamlit_style = """
-    <style>
-    /* Hide the default sidebar navigation */
-    [data-testid="stSidebarNavItems"] {
-        display: none !important;
-    }
+df_f = df[df["Statut"].isin(statut_filtre)]
+if marque_filtre:
+    df_f = df_f[df_f["Marque"].isin(marque_filtre)]
+if batiment_filtre:
+    df_f = df_f[df_f["Bâtiment"].isin(batiment_filtre)]
 
-    /* Hide the expand/collapse arrow */
-    button[kind="header"] {
-        display: none !important;
-    }
+# ── Header ───────────────────────────────────────────────────────────────────
+st.title("Tableau de bord — Flotte d'ascenseurs")
+st.caption(f"{len(df_f)} ascenseur(s) affiché(s) sur {len(df)} au total")
 
-    /* Remove the extra padding at the top of sidebar */
-    section[data-testid="stSidebar"] > div {
-        padding-top: 1rem !important;
-    }
+# ── KPI row ──────────────────────────────────────────────────────────────────
+k1, k2, k3, k4, k5 = st.columns(5)
+operationnels = len(df_f[df_f["Statut"] == "Opérationnel"])
+en_maintenance = len(df_f[df_f["Statut"] == "En maintenance"])
+hors_service = len(df_f[df_f["Statut"] == "Hors service"])
+inspection = len(df_f[df_f["Statut"] == "Inspection requise"])
+taux_dispo = round(operationnels / len(df_f) * 100) if len(df_f) else 0
 
-    /* Optional: Hide app name from sidebar header if present */
-    .sidebar-content .sidebar-collapse-control {
-        display: none !important;
-    }
-    </style>
-    """
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-    
-    # Create a simple loading page
-    st.write("# Loading WasteWise...")
-    st.write("Please wait while we load the application...")
-    
-    # Redirect to the Home page
-    st.switch_page("1_Home.py")
+with k1:
+    st.markdown(f"""<div class="kpi-card" style="border-color:#1E3A5F">
+    <p class="kpi-label">Total ascenseurs</p>
+    <p class="kpi-value">{len(df_f)}</p></div>""", unsafe_allow_html=True)
+with k2:
+    st.markdown(f"""<div class="kpi-card" style="border-color:#22C55E">
+    <p class="kpi-label">Opérationnels</p>
+    <p class="kpi-value" style="color:#22C55E">{operationnels}</p></div>""", unsafe_allow_html=True)
+with k3:
+    st.markdown(f"""<div class="kpi-card" style="border-color:#F59E0B">
+    <p class="kpi-label">En maintenance</p>
+    <p class="kpi-value" style="color:#F59E0B">{en_maintenance}</p></div>""", unsafe_allow_html=True)
+with k4:
+    st.markdown(f"""<div class="kpi-card" style="border-color:#EF4444">
+    <p class="kpi-label">Hors service</p>
+    <p class="kpi-value" style="color:#EF4444">{hors_service}</p></div>""", unsafe_allow_html=True)
+with k5:
+    color = "#22C55E" if taux_dispo >= 80 else "#F59E0B" if taux_dispo >= 60 else "#EF4444"
+    st.markdown(f"""<div class="kpi-card" style="border-color:{color}">
+    <p class="kpi-label">Taux de disponibilité</p>
+    <p class="kpi-value" style="color:{color}">{taux_dispo}%</p></div>""", unsafe_allow_html=True)
+
+st.divider()
+
+# ── Alertes ──────────────────────────────────────────────────────────────────
+alertes = df_f[df_f["Jours avant maintenance"] <= 30].sort_values("Jours avant maintenance")
+if len(alertes):
+    with st.expander(f"⚠️ {len(alertes)} ascenseur(s) nécessitent une attention dans les 30 prochains jours", expanded=True):
+        for _, row in alertes.iterrows():
+            jours = row["Jours avant maintenance"]
+            couleur = "#EF4444" if jours < 0 else "#F59E0B"
+            msg = f"En retard de {abs(jours)}j" if jours < 0 else f"Dans {jours}j"
+            st.markdown(
+                f'<div class="alert-box"><b>{row["ID"]}</b> — {row["Bâtiment"]} ({row["Marque"]}) — '
+                f'Maintenance prévue le {row["Prochaine maintenance"].strftime("%d/%m/%Y")} '
+                f'<span style="color:{couleur};font-weight:600">({msg})</span></div>',
+                unsafe_allow_html=True,
+            )
+
+# ── Charts row ───────────────────────────────────────────────────────────────
+col_a, col_b, col_c = st.columns([1, 1, 1])
+
+with col_a:
+    st.subheader("Statuts")
+    counts = df_f["Statut"].value_counts().reset_index()
+    counts.columns = ["Statut", "Nombre"]
+    colors = [couleur_statut(s) for s in counts["Statut"]]
+    fig = px.pie(counts, names="Statut", values="Nombre", color="Statut",
+                 color_discrete_map={s: couleur_statut(s) for s in STATUTS},
+                 hole=0.45)
+    fig.update_layout(margin=dict(t=10, b=10, l=10, r=10), showlegend=True,
+                      legend=dict(orientation="h", y=-0.15))
+    st.plotly_chart(fig, use_container_width=True)
+
+with col_b:
+    st.subheader("Par marque")
+    by_brand = df_f.groupby(["Marque", "Statut"]).size().reset_index(name="n")
+    fig2 = px.bar(by_brand, x="Marque", y="n", color="Statut",
+                  color_discrete_map={s: couleur_statut(s) for s in STATUTS},
+                  labels={"n": "Ascenseurs", "Marque": ""})
+    fig2.update_layout(margin=dict(t=10, b=10, l=10, r=10), legend_title="")
+    st.plotly_chart(fig2, use_container_width=True)
+
+with col_c:
+    st.subheader("Âge de la flotte")
+    fig3 = px.histogram(df_f, x="Âge (ans)", nbins=15, color_discrete_sequence=["#1E3A5F"])
+    fig3.update_layout(margin=dict(t=10, b=10, l=10, r=10),
+                       xaxis_title="Âge (ans)", yaxis_title="Nb ascenseurs")
+    st.plotly_chart(fig3, use_container_width=True)
+
+st.divider()
+
+# ── Table ────────────────────────────────────────────────────────────────────
+st.subheader("Liste de la flotte")
+
+cols_affichees = ["ID", "Bâtiment", "Marque", "Modèle", "Type",
+                  "Année de fabrication", "Âge (ans)", "Statut",
+                  "Étages desservis", "Capacité (kg)",
+                  "Dernière maintenance", "Prochaine maintenance",
+                  "Jours avant maintenance", "Incidents (12 mois)", "Technicien responsable"]
+
+search = st.text_input("Rechercher (ID, bâtiment, marque…)", placeholder="ex: ASC-012 ou Otis")
+df_display = df_f[cols_affichees].copy()
+if search:
+    mask = df_display.apply(lambda col: col.astype(str).str.contains(search, case=False, na=False)).any(axis=1)
+    df_display = df_display[mask]
+
+def colorize_row(row):
+    color = ""
+    if row["Statut"] == "Hors service":
+        color = "background-color: #FEE2E2"
+    elif row["Statut"] == "En maintenance":
+        color = "background-color: #FEF3C7"
+    elif row["Statut"] == "Inspection requise":
+        color = "background-color: #EDE9FE"
+    return [color] * len(row)
+
+st.dataframe(
+    df_display.style.apply(colorize_row, axis=1),
+    use_container_width=True,
+    height=450,
+    hide_index=True,
+)
